@@ -119,6 +119,76 @@ end
     @test map(fib3, collect(1:15)) == [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610]
 end
 
+# ╔═╡ eea00651-8e90-450d-baeb-9bd91edc2737
+md"""
+`fib3` ought to use ``O(\log(n))`` matrix multiplications and therefore
+``O(\log(n))`` time complexity, _assuming_ that the time per arithmetic
+operation is fixed (which should be the case for fixed-precision `Int`).
+
+Unfortunately, it isn't really possible to test this clearly given the range
+of values of ``n`` we can cover with `Int`.
+"""
+
+# ╔═╡ 96cbe631-e38a-4b5c-a879-68804056ff33
+begin
+	x_90 = collect(1:90)
+	y2_90 = [(@timed fib2(n))[2] for n in x_90]
+	y3_90 = [(@timed fib3(n))[2] for n in x_90]
+	scatter(x_90, y2_90, label="linear", xlabel="n", ylabel="time(s)", title="Linear vs super(?)-linear Fibonacci", ylim=(0, 1e-6))
+	scatter!(x_90, y3_90, label="matrix")
+end
+
+# ╔═╡ 46797613-a9d8-4ec7-8e80-af747fa1a3b2
+"""
+	fib4(n::Int) :: BigInt
+
+Return the nth Fibonacci number. Iterative algorithm runs in linear time.
+
+`n` must be non-negative, but this version uses `BigInt`s to compute results
+of arbitrary size.
+"""
+function fib4(n::Int) :: BigInt
+    if n == 0
+        return 0
+    else
+		n = BigInt(n)
+		Fi_1 = BigInt(0)
+		Fi = BigInt(1)
+        for i in 1:n-1
+			Fi, Fi_1 = Fi + Fi_1, Fi
+		end
+        return Fi
+    end
+end
+
+# ╔═╡ 6cb93265-a092-4a19-98b3-3dd66f82beaa
+"""
+	fib5(n::Int) :: BigInt
+
+Return the nth Fibonacci number. Matrix algorithm.
+
+`n` must be non-negative, but this version uses `BigInt`s to calculate results of
+arbitrary size.
+"""
+function fib5(n::Int) :: BigInt
+    if n == 0
+        return 0
+    else
+		M = BigInt[0 1; 1 1]
+		a = BigInt[0; 1]
+		return (M^n * a)[1]
+	end
+end
+
+# ╔═╡ 65d1c5ac-d86a-430c-81fa-b83dd005d948
+begin
+	x_200 = collect(1:200)
+	y4_200 = [(@timed fib4(n))[2] for n in x_200]
+	y5_200 = [(@timed fib5(n))[2] for n in x_200]
+	scatter(x_200, y4_200, label="linear", xlabel="n", ylabel="time(s)", title="Linear vs super(?)-linear Fibonacci, BigInts", ylim=(0,3e-5))
+	scatter!(x_200, y5_200, label="matrix")
+end
+
 # ╔═╡ 607e5add-664d-43ae-aa58-96f77b7f8e16
 md"""
 ### Setup
@@ -1281,6 +1351,11 @@ version = "1.4.1+1"
 # ╠═960fbf3a-a557-4889-97f2-89dca32ef2e4
 # ╠═a54bc5e6-9f4d-449b-8f9e-5984992c3993
 # ╟─4457b6e6-ebc1-4106-bcd2-e471df423de6
+# ╟─eea00651-8e90-450d-baeb-9bd91edc2737
+# ╠═96cbe631-e38a-4b5c-a879-68804056ff33
+# ╠═46797613-a9d8-4ec7-8e80-af747fa1a3b2
+# ╠═6cb93265-a092-4a19-98b3-3dd66f82beaa
+# ╠═65d1c5ac-d86a-430c-81fa-b83dd005d948
 # ╟─607e5add-664d-43ae-aa58-96f77b7f8e16
 # ╠═25c9b99d-f720-4adb-b46a-3b04d9249eed
 # ╠═057fb94b-9b93-4ca2-98ab-8260a2b1fe12
