@@ -115,6 +115,68 @@ end
 	@test !(BInt(2) < BInt(2))
 end
 
+# ╔═╡ 4d6b4349-472c-4fb7-b016-6b7f3fc011cc
+function trim_leading_zeros(x::BitArray) :: BitArray
+	xrev = reverse(x)  # recall bits are lsb-first
+	idx = findfirst(x -> x, xrev)  # trim leading zeros
+	return isnothing(idx) ? [] : reverse(xrev[idx:end])
+end
+
+# ╔═╡ 9ec587e1-b339-4d75-b67d-6451ecaacb63
+begin
+	function shift_left(a::BInt) :: BInt
+		if iszero(bbits(a))
+			return a
+		else
+			return BInt(vcat([false], a.bits))
+		end
+	end
+	function shift_right(a::BInt) :: BInt
+		return BInt(a.bits[2:end])
+	end
+end
+
+# ╔═╡ 7e3731b5-c40b-4bfc-b624-cd6d5b40fbaf
+@testset "shift_left and shift_right" begin
+	@test shift_left(BInt(0)) == BInt(0)
+	@test shift_left(BInt(1)) == BInt(2)
+	@test shift_left(BInt(2)) == BInt(4)
+	@test shift_left(BInt(5)) == BInt(10)
+	@test shift_right(BInt(1)) == BInt(0)
+	@test shift_right(BInt(4)) == BInt(2)
+	@test shift_right(BInt(5)) == BInt(2)
+end
+
+# ╔═╡ 49c892e3-8907-43f1-ae9b-88b85f96e887
+function iseven(a::BInt) :: Bool
+	if iszero(bbits(a))
+		return true
+	else
+		return !a.bits[1]
+	end
+end
+
+# ╔═╡ 31a09cf0-3f1f-4df5-b7bd-32239f57af64
+@testset "BInt iseven" begin
+	@test iseven(BInt(0)) == true
+	@test iseven(BInt(1)) == false
+	@test iseven(BInt(6)) == true
+	@test iseven(BInt(7)) == false
+end
+
+# ╔═╡ 2214feae-d6eb-4b64-abe3-829979952c7d
+function Base.:*(a::BInt, b::BInt) :: BInt
+	if b == BInt(0)
+		return BInt(0)
+	end
+	z = a * shift_right(b)
+	if iseven(b)
+		return shift_left(z)
+	else
+		return a + shift_left(z)
+	end
+end
+
 # ╔═╡ 165797f3-773e-4beb-bd7e-58dbaef1a8c3
 function Base.:-(a::BInt, b::BInt) :: BInt
 	@assert a >= b "BInts must be non-negative"
@@ -128,13 +190,7 @@ function Base.:-(a::BInt, b::BInt) :: BInt
 		borrow = s < 0 ? true : false
 		z[i] = 2*borrow + s
 	end
-	zrev = reverse(z)  # recall bits are lsb-first
-	idx = findfirst(x -> x, zrev)  # trim leading zeros
-	if isnothing(idx)
-		return BInt(0)
-	else
-		return BInt(reverse(zrev[idx:end]))
-	end
+	return BInt(trim_leading_zeros(z))
 end
 
 # ╔═╡ bd0e4044-1518-413b-be59-e41b24318e6a
@@ -166,15 +222,26 @@ end
 	@test BInt(1) - BInt(0) == BInt(1)
 	@test BInt(7) - BInt(3) == BInt(4)
 	@test BInt(13) - BInt(13) == BInt(0)
+	@test_throws AssertionError BInt(5) - BInt(10)
 end
+
+# ╔═╡ d2d8df6f-7506-4339-a8ab-59459080559e
+@testset "BInt multiplication (a la francais)" begin
+	@test BInt(0) * BInt(0) == BInt(0)
+	@test BInt(0) * BInt(3) == BInt(0)
+	@test BInt(3) * BInt(0) == BInt(0)
+	@test BInt(1) * BInt(1) == BInt(1)
+	@test BInt(2) * BInt(5) == BInt(10)
+	@test BInt(5) * BInt(2) == BInt(10)
+end
+
+# ╔═╡ 94759e6e-b62b-4403-922e-1049ac200447
+BInt(2) * BInt(2)
 
 # ╔═╡ 80195a03-072b-4702-b56e-4c2c3416e8c1
 md"""
 ### Setup
 """
-
-# ╔═╡ c6f8317e-181c-44ff-b2f3-6136c7e9b347
-
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -235,10 +302,17 @@ version = "1.11.0"
 # ╠═d91ac06b-ace0-4c6d-a8d4-90a5624e9642
 # ╟─f7677125-4114-463c-9557-22628b9b8b6f
 # ╠═bd0e4044-1518-413b-be59-e41b24318e6a
+# ╠═4d6b4349-472c-4fb7-b016-6b7f3fc011cc
 # ╠═165797f3-773e-4beb-bd7e-58dbaef1a8c3
 # ╟─e3ee74d5-ecc0-49e6-af59-5da8f76cfeef
+# ╠═9ec587e1-b339-4d75-b67d-6451ecaacb63
+# ╟─7e3731b5-c40b-4bfc-b624-cd6d5b40fbaf
+# ╠═49c892e3-8907-43f1-ae9b-88b85f96e887
+# ╟─31a09cf0-3f1f-4df5-b7bd-32239f57af64
+# ╠═2214feae-d6eb-4b64-abe3-829979952c7d
+# ╠═d2d8df6f-7506-4339-a8ab-59459080559e
+# ╠═94759e6e-b62b-4403-922e-1049ac200447
 # ╟─80195a03-072b-4702-b56e-4c2c3416e8c1
 # ╠═d9b585dc-9063-4754-9c65-8ef7e176e41c
-# ╠═c6f8317e-181c-44ff-b2f3-6136c7e9b347
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
