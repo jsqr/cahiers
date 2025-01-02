@@ -94,10 +94,12 @@ function Base.:<(a::BInt, b::BInt) :: Bool
 	elseif bbits(a) < bbits(b)
 		return true
 	else  # failing that, compare bit-by-bit
-		x, y = reverse(a.bits), reverse(b.bits) # msb first
+		x, y = reverse(a.bits), reverse(b.bits)
 		@assert length(x) == length(y)
-		for i ∈ 1:length(x)
-			if x[i] > y[i]
+		for i ∈ length(x):-1:1  # from msb to lsb
+			if x[i] < y[i]
+				return true
+			elseif x[i] > y[i]
 				return false
 			end
 		end
@@ -112,7 +114,9 @@ end
 	@test BInt(1) ≠ BInt(2)
 	@test BInt(3) > BInt(0)
 	@test BInt(1) < BInt(2)
+	@test BInt(2) < BInt(3)
 	@test !(BInt(2) < BInt(2))
+	@test !(BInt(2) >= BInt(3))
 end
 
 # ╔═╡ 4d6b4349-472c-4fb7-b016-6b7f3fc011cc
@@ -122,37 +126,17 @@ function trim_leading_zeros(x::BitArray) :: BitArray
 	return isnothing(idx) ? [] : reverse(xrev[idx:end])
 end
 
-# ╔═╡ 9ec587e1-b339-4d75-b67d-6451ecaacb63
-begin
-	function shift_left(a::BInt) :: BInt
-		if iszero(bbits(a))
-			return a
-		else
-			return BInt(vcat([false], a.bits))
-		end
-	end
-	function shift_right(a::BInt) :: BInt
-		return BInt(a.bits[2:end])
-	end
-end
-
-# ╔═╡ 7e3731b5-c40b-4bfc-b624-cd6d5b40fbaf
-@testset "shift_left and shift_right" begin
-	@test shift_left(BInt(0)) == BInt(0)
-	@test shift_left(BInt(1)) == BInt(2)
-	@test shift_left(BInt(2)) == BInt(4)
-	@test shift_left(BInt(5)) == BInt(10)
-	@test shift_right(BInt(1)) == BInt(0)
-	@test shift_right(BInt(4)) == BInt(2)
-	@test shift_right(BInt(5)) == BInt(2)
-end
-
 # ╔═╡ 49c892e3-8907-43f1-ae9b-88b85f96e887
-function iseven(a::BInt) :: Bool
-	if iszero(bbits(a))
-		return true
-	else
-		return !a.bits[1]
+begin
+	function iseven(a::BInt) :: Bool
+		return !isodd(a)
+	end
+	function isodd(a::BInt) :: Bool
+		if iszero(a)
+			return false
+		else
+			return a.bits[1]
+		end
 	end
 end
 
@@ -169,11 +153,11 @@ function Base.:*(a::BInt, b::BInt) :: BInt
 	if b == BInt(0)
 		return BInt(0)
 	end
-	z = a * shift_right(b)
+	z = a * (b >> 1)
 	if iseven(b)
-		return shift_left(z)
+		return z << 1
 	else
-		return a + shift_left(z)
+		return a + z << 1
 	end
 end
 
@@ -214,6 +198,35 @@ function Base.:+(a::BInt, b::BInt) :: BInt
     return BInt(z)
 end
 
+# ╔═╡ 9ec587e1-b339-4d75-b67d-6451ecaacb63
+begin
+	function Base.iszero(a::BInt) :: Bool
+		return iszero(bbits(a))
+	end
+	function Base.:<<(a::BInt, n::Int)
+		if iszero(a)
+			return a
+		else
+			return BInt(vcat(falses(n), a.bits))
+		end
+	end
+	function Base.:>>(a::BInt, n::Int)
+		return BInt(a.bits[n+1:end])
+	end
+end
+
+# ╔═╡ 7e3731b5-c40b-4bfc-b624-cd6d5b40fbaf
+@testset "shift_left and shift_right" begin
+	@test iszero(BInt(0) << 1)
+	@test BInt(1) << 1 == BInt(2)
+	@test BInt(1) << 2 == BInt(4)
+	@test BInt(5) << 1 == BInt(10)
+	@test iszero(BInt(1) >> 1)
+	@test BInt(4) >> 1 == BInt(2)
+	@test BInt(5) >> 1 == BInt(2)
+	@test BInt(12) >> 2 == BInt(3)
+end
+
 # ╔═╡ e3ee74d5-ecc0-49e6-af59-5da8f76cfeef
 @testset "BInt addition and subtraction" begin
 	@test BInt(0) + BInt(0) == BInt(0)
@@ -236,7 +249,28 @@ end
 end
 
 # ╔═╡ 94759e6e-b62b-4403-922e-1049ac200447
-BInt(2) * BInt(2)
+function Base.divrem(a::BInt, b::BInt) :: Tuple{BInt, BInt}
+	@assert b > BInt(1)
+	if iszero(a)
+		return BInt(0), BInt(0)
+	else
+		q, r = divrem(a >> 1, b)
+		q, r = q << 1, r << 1
+		r = isodd(a) ? r + BInt(1) : r
+		if r >= b
+			q, r = q + BInt(1), r - b
+		end
+		return q, r
+	end
+end
+
+# ╔═╡ 859234db-00a3-46e4-a18f-9afe2d623c75
+@testset "BInt divrem" begin
+	@test divrem(BInt(0), BInt(5)) == (BInt(0), BInt(0))
+	@test divrem(BInt(15), BInt(3)) == (BInt(5), BInt(0))
+	@test divrem(BInt(15), BInt(5)) == (BInt(3), BInt(0))
+	@test divrem(BInt(15), BInt(4)) == (BInt(3), BInt(3))
+end
 
 # ╔═╡ 80195a03-072b-4702-b56e-4c2c3416e8c1
 md"""
@@ -310,8 +344,9 @@ version = "1.11.0"
 # ╠═49c892e3-8907-43f1-ae9b-88b85f96e887
 # ╟─31a09cf0-3f1f-4df5-b7bd-32239f57af64
 # ╠═2214feae-d6eb-4b64-abe3-829979952c7d
-# ╠═d2d8df6f-7506-4339-a8ab-59459080559e
+# ╟─d2d8df6f-7506-4339-a8ab-59459080559e
 # ╠═94759e6e-b62b-4403-922e-1049ac200447
+# ╟─859234db-00a3-46e4-a18f-9afe2d623c75
 # ╟─80195a03-072b-4702-b56e-4c2c3416e8c1
 # ╠═d9b585dc-9063-4754-9c65-8ef7e176e41c
 # ╟─00000000-0000-0000-0000-000000000001
