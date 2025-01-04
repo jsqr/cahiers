@@ -126,28 +126,6 @@ function trim_leading_zeros(x::BitArray) :: BitArray
 	return isnothing(idx) ? [] : reverse(xrev[idx:end])
 end
 
-# ╔═╡ 49c892e3-8907-43f1-ae9b-88b85f96e887
-begin
-	function iseven(a::BInt) :: Bool
-		return !isodd(a)
-	end
-	function isodd(a::BInt) :: Bool
-		if iszero(a)
-			return false
-		else
-			return a.bits[1]
-		end
-	end
-end
-
-# ╔═╡ 31a09cf0-3f1f-4df5-b7bd-32239f57af64
-@testset "BInt iseven" begin
-	@test iseven(BInt(0)) == true
-	@test iseven(BInt(1)) == false
-	@test iseven(BInt(6)) == true
-	@test iseven(BInt(7)) == false
-end
-
 # ╔═╡ 2214feae-d6eb-4b64-abe3-829979952c7d
 function Base.:*(a::BInt, b::BInt) :: BInt
 	if b == BInt(0)
@@ -227,6 +205,31 @@ end
 	@test BInt(12) >> 2 == BInt(3)
 end
 
+# ╔═╡ 49c892e3-8907-43f1-ae9b-88b85f96e887
+begin
+	function Base.iseven(a::BInt) :: Bool
+		return !isodd(a)
+	end
+	function Base.isodd(a::BInt) :: Bool
+		if iszero(a)
+			return false
+		else
+			return a.bits[1]
+		end
+	end
+end
+
+# ╔═╡ 534aa08c-5f35-4901-ad92-3f31200879fd
+iseven
+
+# ╔═╡ 31a09cf0-3f1f-4df5-b7bd-32239f57af64
+@testset "BInt iseven" begin
+	@test iseven(BInt(0)) == true
+	@test iseven(BInt(1)) == false
+	@test iseven(BInt(6)) == true
+	@test iseven(BInt(7)) == false
+end
+
 # ╔═╡ e3ee74d5-ecc0-49e6-af59-5da8f76cfeef
 @testset "BInt addition and subtraction" begin
 	@test BInt(0) + BInt(0) == BInt(0)
@@ -271,6 +274,145 @@ end
 	@test divrem(BInt(15), BInt(5)) == (BInt(3), BInt(0))
 	@test divrem(BInt(15), BInt(4)) == (BInt(3), BInt(3))
 end
+
+# ╔═╡ d56bb28b-c262-4bc7-8a9f-967e87770ba6
+md"""
+→ *This completes development of the `BInt` type, with facilities for construction, display, comparison, and the four basic operations.*
+
+-------------
+"""
+
+# ╔═╡ 71c9d31c-cc93-4e5f-ac67-532bf88c3ac9
+md"""
+### 1.2: Modular Arithmetic
+
+Although it would be possible to build on the BInt type, we will instead
+switch over to conventional Julia types and libraries. This pattern strikes
+a balance between practicing low-level work on implementation on the one
+hand, and staying close to idiomatic Julia on the other.
+
+To start, we need to develop a set of primitives to handle basic operations
+(addition, subtraction, multiplication, division) – as well as exponentiation
+and GCD – modulo N. We use Julia's `BigInt`s as a base. A general tactic
+with these functions is to use the substitution principle to reduce intermediate
+results modulo N whenever possible.
+"""
+
+# ╔═╡ fbb1a97d-af62-40b2-a2ba-56d5ba7d75f5
+function addmod(a::Integer, b::Integer, N::Integer) :: Integer
+	# `mod` could be implemented along the lines of `divrem` above
+	a, b = mod(a, N), mod(b, N)
+	c = a + b
+	return c < N ? c : c-N  # equivalent to mod(a+b)
+end
+
+# ╔═╡ 96aba1d6-a199-4589-859b-b9fda3fc58d1
+function multmod(a::Integer, b::Integer, N::Integer) :: Integer
+	a, b = mod(a, N), mod(b, N)
+	return mod(a*b, N)
+end
+
+# ╔═╡ e753c5c1-0a38-4a0e-95cd-946b82e9bfc1
+"""
+``a^b`` mod ``N``
+"""
+function expmod(a::Integer, b::Integer, N::Integer) :: Integer
+	a, b = mod(a, N), mod(b, N)
+	if iszero(b)
+		return 1
+	end
+	c = expmod(a, div(b, 2), N)
+	if iseven(c)
+		return mod(c*c, N)
+	else
+		return mod(a*c*c, N)
+	end
+end
+
+# ╔═╡ 6648f02d-beac-460e-9029-fe757593e998
+"""
+Return gcd(``a, b``) using Euclid's algorithm
+"""
+function euclid(a::Integer, b::Integer) :: Integer
+
+	function euclid_rec(a, b)
+		if iszero(b)
+			return a
+		else
+			return euclid_rec(b, mod(a, b))
+		end
+	end
+		
+	@assert a ≥ 0 && b ≥ 0
+	if a < b
+		a, b = b, a
+	end
+	return euclid_rec(a, b)
+end
+
+# ╔═╡ bcb523bf-4bf2-4bd4-90f6-5a47225c99af
+"""
+Return integers ``x, y, d`` where ``d = ax + by = `` gcd(``a, b``)
+"""
+function extended_euclid(a::Integer, b::Integer)
+
+	function euclid_rec(a, b)
+		if iszero(b)
+			return 1, 0, a
+		end
+		x, y, d = euclid_rec(b, mod(a, b))
+		return y, x - div(a, b)*y, d
+	end
+	
+	@assert a ≥ 0 && b ≥ 0
+	if a < b
+		a, b = b, a
+	end
+	return euclid_rec(a, b)
+end
+
+# ╔═╡ 10e2ecbb-3b49-4fd3-9ae0-be5a91950495
+md"""
+**Modular division.** ``x`` is the _multiplicative inverse_ of ``a`` modulo ``N``
+if ``a x \equiv 1`` mod ``N``. This inverse exists iff ``a`` and ``N`` are
+relatively prime.
+
+Julia uses `invmod` for this, and raises an error if gcd(``a, N``) ``≠ 1``.
+"""
+
+# ╔═╡ 2572377e-ba38-404f-9046-5363434de08d
+function my_invmod(a, N)
+	x, y, d = extended_euclid(N, a)
+	@assert d == 1 "arguments must be relatively prime"
+	return mod(y, N) # y may be negative
+end
+
+# ╔═╡ ebefce4d-efe9-4702-8182-06cdff682d14
+function divmod(a, b, N)
+	binv = my_invmod(b, N)
+	return multmod(a, binv, N)
+end
+
+# ╔═╡ 79cb59f7-664d-426b-9b38-e854f777eef1
+md"""
+→ *Useful arithmetic functions built in to Julia:*
+
+- `gcd`
+- `gcdx`
+- `lcm`
+- `powermod`
+- `invmod`
+
+-------------
+"""
+
+# ╔═╡ 32779dd9-ee80-41ae-9679-23e35c0cc472
+md"""
+### 1.3: Primality Testing
+"""
+
+# ╔═╡ 273aef63-3e6c-4508-9da3-03627903267d
+# TODO
 
 # ╔═╡ 80195a03-072b-4702-b56e-4c2c3416e8c1
 md"""
@@ -341,12 +483,26 @@ version = "1.11.0"
 # ╟─e3ee74d5-ecc0-49e6-af59-5da8f76cfeef
 # ╠═9ec587e1-b339-4d75-b67d-6451ecaacb63
 # ╟─7e3731b5-c40b-4bfc-b624-cd6d5b40fbaf
+# ╠═534aa08c-5f35-4901-ad92-3f31200879fd
 # ╠═49c892e3-8907-43f1-ae9b-88b85f96e887
 # ╟─31a09cf0-3f1f-4df5-b7bd-32239f57af64
 # ╠═2214feae-d6eb-4b64-abe3-829979952c7d
 # ╟─d2d8df6f-7506-4339-a8ab-59459080559e
 # ╠═94759e6e-b62b-4403-922e-1049ac200447
 # ╟─859234db-00a3-46e4-a18f-9afe2d623c75
+# ╟─d56bb28b-c262-4bc7-8a9f-967e87770ba6
+# ╟─71c9d31c-cc93-4e5f-ac67-532bf88c3ac9
+# ╠═fbb1a97d-af62-40b2-a2ba-56d5ba7d75f5
+# ╠═96aba1d6-a199-4589-859b-b9fda3fc58d1
+# ╠═e753c5c1-0a38-4a0e-95cd-946b82e9bfc1
+# ╠═6648f02d-beac-460e-9029-fe757593e998
+# ╠═bcb523bf-4bf2-4bd4-90f6-5a47225c99af
+# ╠═10e2ecbb-3b49-4fd3-9ae0-be5a91950495
+# ╠═2572377e-ba38-404f-9046-5363434de08d
+# ╠═ebefce4d-efe9-4702-8182-06cdff682d14
+# ╟─79cb59f7-664d-426b-9b38-e854f777eef1
+# ╟─32779dd9-ee80-41ae-9679-23e35c0cc472
+# ╠═273aef63-3e6c-4508-9da3-03627903267d
 # ╟─80195a03-072b-4702-b56e-4c2c3416e8c1
 # ╠═d9b585dc-9063-4754-9c65-8ef7e176e41c
 # ╟─00000000-0000-0000-0000-000000000001
