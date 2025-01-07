@@ -293,9 +293,9 @@ hand, and staying close to idiomatic Julia on the other.
 
 To start, we need to develop a set of primitives to handle basic operations
 (addition, subtraction, multiplication, division) – as well as exponentiation
-and GCD – modulo N. We use Julia's `BigInt`s as a base. A general tactic
-with these functions is to use the substitution principle to reduce intermediate
-results modulo N whenever possible.
+and GCD – modulo N. We use Julia's integer types, including `BigInt`, as a base.
+
+A general tactic with these functions is to use the substitution principle to reduce intermediate results modulo N whenever possible.
 """
 
 # ╔═╡ fbb1a97d-af62-40b2-a2ba-56d5ba7d75f5
@@ -314,7 +314,7 @@ end
 
 # ╔═╡ e753c5c1-0a38-4a0e-95cd-946b82e9bfc1
 """
-``a^b`` mod ``N``
+Return ``a^b\\mod N``
 """
 function expmod(a::Integer, b::Integer, N::Integer) :: Integer
 	a, b = mod(a, N), mod(b, N)
@@ -331,7 +331,7 @@ end
 
 # ╔═╡ 6648f02d-beac-460e-9029-fe757593e998
 """
-Return gcd(``a, b``) using Euclid's algorithm
+Return ``\\gcd (a, b)`` using Euclid's algorithm
 """
 function euclid(a::Integer, b::Integer) :: Integer
 
@@ -352,7 +352,7 @@ end
 
 # ╔═╡ bcb523bf-4bf2-4bd4-90f6-5a47225c99af
 """
-Return integers ``x, y, d`` where ``d = ax + by = `` gcd(``a, b``)
+Return integers ``x, y, d``, where ``d = ax + by = \\gcd (a, b)``
 """
 function extended_euclid(a::Integer, b::Integer)
 
@@ -373,11 +373,11 @@ end
 
 # ╔═╡ 10e2ecbb-3b49-4fd3-9ae0-be5a91950495
 md"""
-**Modular division.** ``x`` is the _multiplicative inverse_ of ``a`` modulo ``N``
-if ``a x \equiv 1`` mod ``N``. This inverse exists iff ``a`` and ``N`` are
+**Modular division.** $x$ is the _multiplicative inverse_ of $a$ modulo $N$
+iff $a x \equiv 1\mod N$. This inverse exists iff $a$ and $N$ are
 relatively prime.
 
-Julia uses `invmod` for this, and raises an error if gcd(``a, N``) ``≠ 1``.
+Julia uses `invmod` for this, and raises an error if $\gcd (a, N) ≠ 1$.
 """
 
 # ╔═╡ 2572377e-ba38-404f-9046-5363434de08d
@@ -411,8 +411,102 @@ md"""
 ### 1.3: Primality Testing
 """
 
+# ╔═╡ a56ab240-de83-486a-9aa4-db5ace670e2e
+"""
+Pick a random positive integer from `1...N`
+"""
+function randpos(n::T) :: T where T <: Integer
+	@assert n > 0
+	if typeof(n) == BigInt # workaround since rand doesn't support BigInt
+		bound = min(n, typemax(UInt64))
+		a = mod(rand(UInt64), 1:bound)
+		return BigInt(a)
+	else
+		return mod(rand(typeof(n)), 1:n)
+	end
+end
+
 # ╔═╡ 273aef63-3e6c-4508-9da3-03627903267d
-# TODO
+"""
+Use Fermat's little theorem to determine whether a positive integer `n` is likely
+to be prime.
+"""
+function pseudoprime1(n::Integer) :: Bool
+	@assert n > 0
+	a = randpos(n)
+	return powermod(a, n-1, n) == 1
+end
+
+# ╔═╡ 52a11e93-68e9-4c46-9f56-4ef65b5875ed
+"""
+Like pseudoprime1, but testing whether any of `k` random numbers from `1...n`
+fails the FLT primality test. May fail for Carmichael numbers, or with probability
+``2^{-k}``.
+
+Note: Carmichael numbers fool the FLT test for all `a` from `1...n` that are
+_relatively prime_ to `n`. The smallest Carmichael number, 561, has factors 3, 11, and 17. So with a reasonably large choice of `k`, there is still a good chance
+of picking an `a` that is _not_ relatively prime, and therefore identifying `n`
+as composite.|
+"""
+function pseudoprime2(n::Integer; k::Int=100) :: Bool
+	A = [randpos(n-1) for i ∈ 1:k]
+	FLT = [powermod(a, n-1, n) == 1 for a in A]
+	return all(FLT)
+end
+
+# ╔═╡ acb9bb9a-84a4-4867-a753-7bb5c6b73466
+"""
+Rewrite `n` as ``2^t u``, returning `(u, t)`
+"""
+function factor_twos(n::T) :: Tuple{T, Int} where T <: Integer
+	@assert n > 0
+	u, t = n, 0
+	while u > 1 && iszero(u%2)
+		u, t = u÷2, t+1
+	end
+	return u, t
+end
+
+# ╔═╡ 32fbe9e5-9dda-48c9-8e03-2b3aa2dd1f72
+function rabin_miller(a::T, n::T) :: Bool where T <: Integer
+	u, t = factor_twos(n-1)
+	S = [powermod(a, 2^i * u, n) for i ∈ 0:t]
+	if last(S) ≠ 1  # FLT test
+		return false
+	end
+	i = findfirst(S.==1)
+	if i > 1 && S[i-1] ≠ n-1 # -1 mod n
+		return false  # nontrivial square root found
+	end
+	return true
+end
+
+# ╔═╡ 0bb594ec-0c2e-4c3a-b148-4620fec4fe9e
+function pseudoprime3(n::Integer; k::Int=100) :: Bool
+	return all([rabin_miller(randpos(n-1), n) for i ∈ 1:k])
+end
+
+# ╔═╡ a3b778c3-e8c5-470f-8dac-96d55742c262
+@testset "pseudoprimes" begin
+	@test pseudoprime2(97)
+	@test !pseudoprime2(97*13)
+	@test !pseudoprime3(561)
+end
+
+# ╔═╡ 9c7f3dfd-8126-47ea-bdad-ddde386ee75b
+function rand_prime(t)
+	n = typemax(t)
+	@assert n <= typemax(Int128)  # UInt128 edge case
+	while true
+		r = Int128(rand(0:n-1))
+		if pseudoprime3(r)
+			return r
+		end
+	end
+end
+
+# ╔═╡ 71237f42-edbd-45ca-a965-586eb05e2230
+md"-------------------"
 
 # ╔═╡ 80195a03-072b-4702-b56e-4c2c3416e8c1
 md"""
@@ -497,12 +591,20 @@ version = "1.11.0"
 # ╠═e753c5c1-0a38-4a0e-95cd-946b82e9bfc1
 # ╠═6648f02d-beac-460e-9029-fe757593e998
 # ╠═bcb523bf-4bf2-4bd4-90f6-5a47225c99af
-# ╠═10e2ecbb-3b49-4fd3-9ae0-be5a91950495
+# ╟─10e2ecbb-3b49-4fd3-9ae0-be5a91950495
 # ╠═2572377e-ba38-404f-9046-5363434de08d
 # ╠═ebefce4d-efe9-4702-8182-06cdff682d14
 # ╟─79cb59f7-664d-426b-9b38-e854f777eef1
 # ╟─32779dd9-ee80-41ae-9679-23e35c0cc472
+# ╠═a56ab240-de83-486a-9aa4-db5ace670e2e
 # ╠═273aef63-3e6c-4508-9da3-03627903267d
+# ╠═52a11e93-68e9-4c46-9f56-4ef65b5875ed
+# ╠═acb9bb9a-84a4-4867-a753-7bb5c6b73466
+# ╠═32fbe9e5-9dda-48c9-8e03-2b3aa2dd1f72
+# ╠═0bb594ec-0c2e-4c3a-b148-4620fec4fe9e
+# ╠═a3b778c3-e8c5-470f-8dac-96d55742c262
+# ╠═9c7f3dfd-8126-47ea-bdad-ddde386ee75b
+# ╟─71237f42-edbd-45ca-a965-586eb05e2230
 # ╟─80195a03-072b-4702-b56e-4c2c3416e8c1
 # ╠═d9b585dc-9063-4754-9c65-8ef7e176e41c
 # ╟─00000000-0000-0000-0000-000000000001
