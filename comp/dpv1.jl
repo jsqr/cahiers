@@ -490,7 +490,7 @@ end
 @testset "pseudoprimes" begin
 	@test pseudoprime2(97)
 	@test !pseudoprime2(97*13)
-	@test !pseudoprime3(561)
+	@test !pseudoprime3(561)  # designed to catch Carmichael numbers
 end
 
 # ╔═╡ 9c7f3dfd-8126-47ea-bdad-ddde386ee75b
@@ -507,6 +507,85 @@ end
 
 # ╔═╡ 71237f42-edbd-45ca-a965-586eb05e2230
 md"-------------------"
+
+# ╔═╡ c50f003a-13c3-497c-9032-09bd93e9ac5d
+md"""
+### 1.4: Cryptography
+
+#### RSA public-key system: toy 32-bit version
+"""
+
+# ╔═╡ 8787382a-430f-4b99-ad32-3b91cb35ff99
+function gen_keys()
+
+	function rel_prime(n)
+		for i ∈ 3:n
+			if gcd(i, n) == 1
+				return i
+			end
+		end
+	end
+	
+	p, q = rand_prime(Int32), rand_prime(Int32)
+	N::Int64 = p*q
+	e = rel_prime((p-1)*(q-1))
+	public = (N, e)
+	private = (invmod(e, (p-1)*(q-1)), e)
+	return public, private
+end
+
+# ╔═╡ aca45906-e8ea-4faf-befc-a4fb115dc280
+function string2ints(s::String) :: Vector{UInt64}
+    bytes = codeunits(s)
+	pad = 8 - length(bytes) % 8
+	if pad > 0
+		append!(bytes, UInt8['x' for _ in 1:pad])
+	end
+	
+    num_groups = length(bytes) ÷ 8
+    result = Vector{Int64}(undef, num_groups)
+
+    for i in 1:num_groups
+        # Calculate the start and end indices of the current group
+        start_idx = (i - 1) * 8 + 1
+        end_idx = i * 8
+
+        # Pack the current group into an Int64
+        group_int = Int64(0)
+        for j in 0:7
+            group_int |= UInt64(bytes[start_idx + j]) << (8 * (7 - j))
+        end
+        result[i] = group_int
+    end
+
+    return result
+end
+
+# ╔═╡ 7e617086-fad0-40ef-93b5-1d525c5807d8
+function ints2string(v::Vector{UInt64}) :: String
+    uint8_vec = UInt8[]
+    for n in v
+        bytes = reverse(reinterpret(UInt8, [n]))
+        append!(uint8_vec, bytes)
+    end
+    return String(uint8_vec)
+end
+
+# ╔═╡ 976fe9f4-d415-4836-8bd6-05f37b5a09ee
+string2ints("hello")
+
+# ╔═╡ 0a84f27e-f02e-4152-be1c-9f5ac32ed62f
+function rsa64_encrypt(msg::String, key::Tuple{Integer, Integer}) :: Vector{Int64}
+	bytes = string2ints(msg)
+	
+end
+
+# ╔═╡ bfa2adf8-6a70-45ac-aa90-9398fbbcf248
+begin
+	p1q1 = 487184289898058016
+	mods = [gcd(i, p1q1) for i ∈ 3:20]
+	mods .== 1
+end
 
 # ╔═╡ 80195a03-072b-4702-b56e-4c2c3416e8c1
 md"""
@@ -605,6 +684,13 @@ version = "1.11.0"
 # ╠═a3b778c3-e8c5-470f-8dac-96d55742c262
 # ╠═9c7f3dfd-8126-47ea-bdad-ddde386ee75b
 # ╟─71237f42-edbd-45ca-a965-586eb05e2230
+# ╟─c50f003a-13c3-497c-9032-09bd93e9ac5d
+# ╠═8787382a-430f-4b99-ad32-3b91cb35ff99
+# ╠═aca45906-e8ea-4faf-befc-a4fb115dc280
+# ╠═7e617086-fad0-40ef-93b5-1d525c5807d8
+# ╠═976fe9f4-d415-4836-8bd6-05f37b5a09ee
+# ╠═0a84f27e-f02e-4152-be1c-9f5ac32ed62f
+# ╠═bfa2adf8-6a70-45ac-aa90-9398fbbcf248
 # ╟─80195a03-072b-4702-b56e-4c2c3416e8c1
 # ╠═d9b585dc-9063-4754-9c65-8ef7e176e41c
 # ╟─00000000-0000-0000-0000-000000000001
