@@ -1,0 +1,29 @@
+[project]
+name = "nb-ai"
+version = "0.1.0"
+description = "AI notebooks"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "loguru",
+    "openai",
+    "pandas",
+    "polars[pyarrow]",
+    "pydantic",
+    "instructor",
+    "scikit-learn",
+    "ollama",
+    "ruff",
+    "numpy",
+    "matplotlib",
+    "seaborn",
+    "marimo>=0.14.10",
+    "duckdb>=1.3.1",
+    "sqlglot>=26.33.0",
+    "altair>=5.5.0",
+    "nbformat>=5.10.4",
+    "pytest>=8.4.1",
+    "python-lsp-server>=1.12.2",
+    "websockets>=15.0.1",
+    "python-lsp-ruff>=2.2.2",
+]
