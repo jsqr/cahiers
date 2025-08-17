@@ -1,0 +1,31 @@
+# ===================================================================
+# PROJECT-LEVEL .GITIGNORE (PYTHON)
+# Purpose: Ignore files specific to Python and Jupyter projects.
+# ===================================================================
+
+# Python virtual environments
+# These can be very large and should NEVER be committed.
+venv/
+env/
+.venv/
+
+# Python bytecode and caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Distribution / packaging artifacts
+build/
+dist/
+*.egg-info/
+sdist/
+wheels/
+*.egg
+
+# Testing artifacts
+.pytest_cache/
+.coverage

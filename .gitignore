@@ -1,5 +1,44 @@
-.vscode/
-venv/
-__pycache__/
+# ===================================================================
+# TOP-LEVEL .GITIGNORE
+# Purpose: Ignore OS, IDE, and secret files common to ALL projects.
+# ===================================================================
+
+# -------------------------------------------------------------------
+# Secrets and Credentials (IMPORTANT!)
+# Never commit sensitive information.
+# -------------------------------------------------------------------
 .env
-*.py[cod]
+*.env
+.env.*
+secrets.ini
+credentials.json
+*.pem
+*.key
+
+# -------------------------------------------------------------------
+# Operating System Files
+# -------------------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# -------------------------------------------------------------------
+# IDE and Editor Configuration
+# -------------------------------------------------------------------
+# Visual Studio Code
+.vscode/
+.history/
+
+# JetBrains (PyCharm, IntelliJ, etc.)
+.idea/
+
+# Vim & Emacs
+*~
+*.swp
+*.swo
