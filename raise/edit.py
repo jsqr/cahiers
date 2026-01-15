@@ -183,10 +183,91 @@ def _(mo):
 
 
 @app.cell
+def _(Path, mo):
+    # Get list of property files in data/specs
+    specs_dir = Path(__file__).parent / "data" / "specs"
+
+    def get_spec_files():
+        if specs_dir.exists():
+            return sorted(specs_dir.glob("*.txt"))
+        return []
+
+    spec_files = get_spec_files()
+    spec_file_options = {f.stem: str(f) for f in spec_files if f.stat().st_size > 0}
+
+    mo.md(
+        f"**Property files in {specs_dir}:**\n\n"
+        + "\n".join(f"- {f.name}" for f in spec_files)
+        if spec_files
+        else f"No .txt files found in {specs_dir}"
+    )
+    return (spec_file_options,)
+
+
+@app.cell(hide_code=True)
 def _(mo):
-    # Property input
+    mo.md(r"""
+    ---
+    """)
+    return
+
+
+@app.cell
+def _(mo, spec_file_options):
+    # Property file selection dropdown
+    spec_keys = list(spec_file_options.keys()) if spec_file_options else []
+
+    spec_dropdown = mo.ui.dropdown(
+        options=spec_file_options if spec_file_options else {},
+        label="Property File",
+        value=spec_keys[0] if spec_keys else None,
+    )
+
+    spec_dropdown
+    return (spec_dropdown,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ---
+    """)
+    return
+
+
+@app.cell
+def _(Path, spec_dropdown):
+    # Load property file contents and filter out comments
+    def load_spec_file(path_str: str | None) -> str:
+        if not path_str:
+            return "your properties here"
+        path = Path(path_str)
+        if path.exists():
+            content = path.read_text()
+            # Filter out comment lines starting with #
+            lines = [
+                line for line in content.split("\n") if not line.strip().startswith("#")
+            ]
+            return "\n".join(lines)
+        return "your properties here"
+
+    spec_file_text = load_spec_file(spec_dropdown.value)
+    return (spec_file_text,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ---
+    """)
+    return
+
+
+@app.cell
+def _(mo, spec_file_text):
+    # Property input - displays loaded file contents
     property_input = mo.ui.text_area(
-        value="your properties here",
+        value=spec_file_text,
         label="Properties",
         full_width=True,
         rows=10,
@@ -232,9 +313,11 @@ def _(llm, md_text, mo, property_input):
             set_properties([])
             return
 
-        # Parse properties (one per line)
+        # Parse properties (one per line, filter out comments)
         properties = [
-            p.strip() for p in property_input.value.strip().split("\n") if p.strip()
+            p.strip()
+            for p in property_input.value.strip().split("\n")
+            if p.strip() and not p.strip().startswith("#")
         ]
         results = llm.verify_properties(client, md_text, properties)
         set_properties(properties)

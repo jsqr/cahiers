@@ -1,6 +1,7 @@
 """LLM functions for structured output using Instructor and Pydantic."""
 
 import os
+import time
 
 import instructor
 from mistralai import Mistral
@@ -88,4 +89,11 @@ def verify_properties(client, text: str, properties: list[str]) -> list[Verifica
     Returns:
         List of Verification results, one for each property.
     """
-    return [verify_property(client, text, prop) for prop in properties]
+    results = []
+    for i, prop in enumerate(properties):
+        result = verify_property(client, text, prop)
+        results.append(result)
+        # Add a small delay between calls to avoid batching issues
+        if i < len(properties) - 1:
+            time.sleep(0.5)
+    return results
