@@ -43,7 +43,8 @@ MODIFY_SYSTEM_PROMPT = """
 You are a lawyer skilled at interpreting and drafting statutes. Your task is to modify
 the given statutory text so that it satisfies the specified properties. Make minimal
 changes necessary to satisfy the properties while preserving the overall structure and
-intent of the statute. Return the complete modified text.
+intent of the statute. Preserve newlines and Markdown artifacts (like '#' symbols)
+where possible. Return the complete modified text.
 """.strip()
 
 MODIFY_USER_PROMPT_TEMPLATE = """

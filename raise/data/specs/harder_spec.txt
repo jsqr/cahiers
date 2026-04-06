@@ -1,6 +1,0 @@
-# Enter your properties here, one per line
-# Lines starting with # are comments and will be ignored during verification
-
-The max penalty for the first violation is ten million dollars.
-
-The max penalty for second and later violations is fifty million dollars.

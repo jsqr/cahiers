@@ -1,6 +1,10 @@
 # Enter your properties here, one per line
 # Lines starting with # are comments and will be ignored during verification
 
+The law imposes transparency requirements on developers of 'frontier' AI models using significant computing power.
+
+Developers have 72 hours to report a critical safety incident.
+
 The max penalty for the first violation is ten million dollars.
 
 The max penalty for second and later violations is thirty million dollars.

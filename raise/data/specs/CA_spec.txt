@@ -1,0 +1,6 @@
+# Enter your properties here, one per line
+# Lines starting with # are comments and will be ignored during verification
+
+The law imposes transparency requirements on developers of 'frontier' AI models using significant computing power.
+
+Developers have 15 days to report a critical safety incident.
