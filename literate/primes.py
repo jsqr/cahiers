@@ -8,7 +8,7 @@
 
 import marimo
 
-__generated_with = "0.22.4"
+__generated_with = "0.23.0"
 app = marimo.App(width="medium")
 
 with app.setup:
@@ -131,7 +131,7 @@ def next_prime(p: list[int]) -> int:
             if p_i * p_i > j:  # see above for number-theoretic justification!
                 return j  # we've checked all the plausible candidates, so j is prime
             if j % p_i == 0:  # see §5 for an alternative
-                break  # j is composite, so break from the for loop and try j+2
+                break
 
 
 @app.cell(hide_code=True)
@@ -198,8 +198,8 @@ def _(mo):
     mo.md(r"""
     ## Reflection
 
-    1. Writing out detailed commentary certainly helps to understand a problem and its solution! The two leading examples are the 'caveat' in §4 and the method of checking divisibility without a remainder operation in §5, both of which I would have glossed over if I hadn't written.
-    2. Dijkstra's program was _already_ a literate program, a decade before the term was coined, in the sense that he included extensive commentary for each step in his development. For that matter, the first published computer program (outside of Babbage's notes), Ada Lovelace's famous Note G, is a literate program in the same sense. [3]
+    1. Writing out detailed commentary certainly helps to understand a problem and its solution! The two leading examples are the 'caveat' in §4 and the method of checking divisibility without a remainder operation in §5, both of which I would have glossed over if I hadn't taken the time to write out notes.
+    2. Dijkstra's program was _already_ a literate program, a decade before the term was coined, in the sense that he included extensive commentary for each step in his development. For that matter, the first published computer program, Ada Lovelace's famous Bernoulli number routine in Note G, is a literate program in the same sense. [3]
     3. Dijkstra, with his interest in process, is more exploratory in his development in that he revises lines of code in the course of building a complete solution. Knuth, by contrast, presents a static result, although with some discussion of alternate paths in the commentary. Perhaps Dijkstra's approach is a more natural fit for those of use who make mistakes and sometimes need to backtrack?
     4. I don't think I would like to go into quite as much detail as either Dijkstra or Knuth on a regular basis. When reading their programs, broken up into 13 pages in Dijkstra's program (without the formatting code!), or 27 sections and 8 columns of text in Knuth's. Dijkstra admits that his is 'too long for [his] taste and wishes', although Knuth seems quite happy with the verbosity: '[t]he extra time I spend in preparing additional commentary is regained because the debugging time is reduced.'
     """)
@@ -211,9 +211,11 @@ def _(mo):
     mo.md(r"""
     ## References
 
-    1. D.E. Knuth, Literate Programming. *The Computer Journal* 27:2, 97-111 (1984). [[Link]](http://literateprogramming.com/knuthweb.pdf)
-    2. O.-J. Dahl, E.W. Dijkstra, and C.A.R. Hoare, *Structured Programming*. Academic Press, London and New York (1972). [[Link]](https://archive.org/details/Structured_Programming__Dahl_Dijkstra_Hoare/page/25/mode/2up)
-    3. A. Lovelace, Notes by the Translator, in *Sketch of The Analytical Engine Invented by Charles Babbage,* by L. F. Menabrea. *Taylor's Scientific Memoirs,* 3, 666–731 (1843). [[Link]](https://www.google.com/books/edition/Scientific_Memoirs_Selected_from_the_Tra/qsY-AAAAYAAJ?hl=en&gbpv=1&pg=PA666&printsec=frontcover)
+    [1] D.E. Knuth, Literate Programming. *The Computer Journal* 27:2, 97-111 (1984). [[Link]](http://literateprogramming.com/knuthweb.pdf)
+
+    [2] O.-J. Dahl, E.W. Dijkstra, and C.A.R. Hoare, *Structured Programming*. Academic Press, London and New York (1972). [[Link]](https://archive.org/details/Structured_Programming__Dahl_Dijkstra_Hoare/page/25/mode/2up)
+
+    [3] A. Lovelace, Notes by the Translator, in *Sketch of The Analytical Engine Invented by Charles Babbage,* by L. F. Menabrea. *Taylor's Scientific Memoirs,* 3, 666–731 (1843). [[Link]](https://www.google.com/books/edition/Scientific_Memoirs_Selected_from_the_Tra/qsY-AAAAYAAJ?hl=en&gbpv=1&pg=PA666&printsec=frontcover)
     """)
     return
 
